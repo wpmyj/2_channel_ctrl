@@ -7,7 +7,7 @@ void test(void)
 {
 	static unsigned int data[20];
 	unsigned char loopx;
-	
+	get_cse7790_info(&cse7790_info);
 	for(loopx = 0; loopx<6 ; loopx ++)
 		{
 			enable_cse7790_write();
@@ -15,12 +15,17 @@ void test(void)
 			disable_cse7790_write();
 		}
 	HAL_Delay(100);
+	set_cse7790_HFconst(0X2345);
 	for(loopx = 0; loopx<6 ; loopx ++)
 		{
 			data[loopx] = read_cse7790(loopx,2);
 		}
-	
+	data[10] = read_cse7790(0X2d,3);
+	data[11] = read_cse7790(0X2e,3);
 	data[0] = read_cse7790(0X7f,3);
+	
+	get_cse7790_info(&cse7790_info);
+	
 	if(data[0] == 1)
 		{
 			data[0] --;
