@@ -23,6 +23,19 @@ void test(void)
 	data[10] = read_cse7790(0X2d,3);
 	data[11] = read_cse7790(0X2e,3);
 	data[0] = read_cse7790(0X7f,3);
+
+	data[12] = set_bit(0, BIT_0|BIT_2|BIT_7);
+	data[12] = set_bit(data[12], BIT_6);
+	data[12] = clear_bit(data[12],BIT_2|BIT_6);
+	data[12] = clear_bit(data[12],BIT_3|BIT_5);
+
+	adjust_PAGain(0.012);
+	//adjust_PAOS(0.012,0.003);
+	adjust_PhaseA(-0.004,0);
+	adjust_PhaseA(-0.004,1);
+	adjust_PhaseA(0.004,0);
+	adjust_PhaseA(0.004,1);
+
 	
 	get_cse7790_info(&cse7790_info);
 	

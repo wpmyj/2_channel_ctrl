@@ -2,6 +2,43 @@
 #define __CSE7790_H__
 #include "include.h"
 
+#define PI 3.141592653f
+#define DEGREES(X)	((X/PI)*180)
+#define RADIAN(x) 	((x/180)*PI)
+
+#define BIT_0	0X01
+#define BIT_1	0X02
+#define BIT_2	0X04
+#define BIT_3	0X08
+#define BIT_4	0X10
+#define BIT_5	0X20
+#define BIT_6	0X40
+#define BIT_7	0X80
+#define BIT_8	0X100
+#define BIT_9	0X200
+#define BIT_10	0X400
+#define BIT_11	0X800
+#define BIT_12	0X1000
+#define BIT_13	0X2000
+#define BIT_14	0X4000
+#define BIT_15	0X8000
+#define BIT_16	0X10000
+#define BIT_17	0X20000
+#define BIT_18	0X40000
+#define BIT_19	0X80000
+#define BIT_20	0X100000
+#define BIT_21	0X200000
+#define BIT_22	0X400000
+#define BIT_23	0X800000
+#define BIT_24	0X1000000
+#define BIT_25	0X2000000
+#define BIT_26	0X4000000
+#define BIT_27	0X8000000
+#define BIT_28	0X10000000
+#define BIT_29	0X20000000
+#define BIT_30	0X40000000
+#define BIT_31	0X80000000
+
 
 typedef struct{
 	unsigned char address;
@@ -63,7 +100,8 @@ extern S_Cse7790_Info cse7790_info;
 #define ENABLE_CSE7790	HAL_GPIO_WritePin(SPI1_CS_GPIO_Port,SPI1_CS_Pin,GPIO_PIN_RESET)
 #define DISABLE_CSE7790	HAL_GPIO_WritePin(SPI1_CS_GPIO_Port,SPI1_CS_Pin,GPIO_PIN_SET)
 
-
+unsigned int set_bit(unsigned int source,unsigned int bit_value);
+unsigned int clear_bit(unsigned int source,unsigned int bit_value);
 
 unsigned int read_cse7790(unsigned char address,unsigned char data_length);
 void write_cse7790(unsigned char address,unsigned int value,unsigned char data_length);
@@ -79,6 +117,15 @@ void set_cse7790_HFconst(unsigned int hfconst);
 
 void get_cse7790_info(P_S_Cse7790_Info cse7790);
 void get_cse7790_reg_value(P_S_Cse7790_Reg reg);
+
+
+void adjust_PAGain(float PAGin_err);//校准A通道功率增益
+void adjust_PBGain(float PBGin_err);//校准B通道功率增益
+void adjust_PAOS(float PAGin_err,float PAOS_err);//校准A通道offset小功率校准
+void adjust_PBOS(float PBGin_err,float PBOS_err);//校准B通道offset小功率校准
+void adjust_PhaseA(float PhaseA_err,unsigned char Phase_sel);//校准A通道相位
+void adjust_PhaseB(float PhaseB_err,unsigned char Phase_sel);//校准B通道相位
+
 
 #endif
 

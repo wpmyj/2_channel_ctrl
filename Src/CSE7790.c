@@ -1,4 +1,5 @@
 #include "CSE7790.h"
+#include <math.h>
 
 extern SPI_HandleTypeDef hspi1;
 
@@ -58,21 +59,17 @@ S_Cse7790_Info cse7790_info = {
 	.define_reg_num=(offsetof(S_Cse7790_Info,define_reg_num))/(sizeof(S_Cse7790_Reg)),
 };
 
-void get_cse7790_reg_value(P_S_Cse7790_Reg reg)
+
+unsigned int set_bit(unsigned int source,unsigned int bit_value)
 {
-	reg->data_value = read_cse7790(reg->address,reg->data_length);
+	return (source | bit_value);
+}
+unsigned int clear_bit(unsigned int source,unsigned int bit_value)
+{
+	return (source & (~bit_value));
 }
 
-void get_cse7790_info(P_S_Cse7790_Info cse7790)
-{
-	unsigned loopx = cse7790->define_reg_num;
-	P_S_Cse7790_Reg read_reg = NULL;
-	read_reg = (P_S_Cse7790_Reg)cse7790;
-	while(loopx--)
-		{
-			get_cse7790_reg_value(read_reg++);
-		}
-}
+
 
 
 unsigned int read_cse7790(unsigned char address,unsigned char data_length)
@@ -142,9 +139,247 @@ void reset_cse7790(void)
 	write_cse7790(0XEA,0X96,1);
 }
 
-void set_cse7790_HFconst(unsigned int hfconst)
+
+
+/********************************
+
+函数封装
+
+*********************************/
+
+/********************************
+
+设置cse7790寄存器的值
+参数 1 cse7790寄存器
+参数 2 要设置的值
+*********************************/
+void set_cse7790_reg_value(P_S_Cse7790_Reg reg,unsigned int value)
 {
 	enable_cse7790_write();
-	write_cse7790(0X02,hfconst,2);
+	write_cse7790(reg->address,value,reg->data_length);
 	disable_cse7790_write();
 }
+
+
+
+
+/********************************
+
+读取cse7790寄存器的值
+参数  cse7790寄存器
+*********************************/
+void get_cse7790_reg_value(P_S_Cse7790_Reg reg)
+{
+	reg->data_value = read_cse7790(reg->address,reg->data_length);
+}
+
+
+
+/********************************
+
+将cse7790 的全部数据读出
+*********************************/
+void get_cse7790_info(P_S_Cse7790_Info cse7790)
+{
+	unsigned loopx = cse7790->define_reg_num;
+	P_S_Cse7790_Reg read_reg = NULL;
+	read_reg = (P_S_Cse7790_Reg)cse7790;
+	while(loopx--)
+		{
+			get_cse7790_reg_value(read_reg++);
+		}
+}
+
+
+
+/********************************************
+
+校准部分函数
+
+********************************************/
+
+void enable_PFout_EP(void)//开启PF脉冲输出和有功功率累加寄存器
+{
+	get_cse7790_reg_value(&cse7790_info.EMUCON);
+	cse7790_info.EMUCON.data_value = set_bit(cse7790_info.EMUCON.data_value,BIT_0);
+	set_cse7790_reg_value(&cse7790_info.EMUCON,cse7790_info.EMUCON.data_value);
+}
+
+void disable_PFout_EP(void)//关闭PF脉冲输出和有功功率累加寄存器
+{
+	get_cse7790_reg_value(&cse7790_info.EMUCON);
+	cse7790_info.EMUCON.data_value = clear_bit(cse7790_info.EMUCON.data_value,BIT_0);
+	set_cse7790_reg_value(&cse7790_info.EMUCON,cse7790_info.EMUCON.data_value);
+}
+
+void set_cse7790_HFconst(unsigned int hfconst)//设置HFconst寄存器的值
+{
+	set_cse7790_reg_value(&cse7790_info.HFconst,hfconst);
+}
+
+void set_Pstart_value(unsigned int value)//设置潜动寄存器
+{
+	set_cse7790_reg_value(&cse7790_info.Pstart,value);
+}
+
+
+
+void adjust_PAGain(float PAGin_err)
+{
+	float tmp = 0.0;
+	int PAGain = 0;
+	tmp = -PAGin_err/(1.0+PAGin_err);
+	if(tmp < 0)
+		{
+			PAGain =(int)(tmp*32768 + 65536);
+		}
+	else
+		{
+			PAGain = (int)(tmp*32768);
+		}
+	set_cse7790_reg_value(&(cse7790_info.PAGain),PAGain);
+}
+
+
+void adjust_PBGain(float PBGin_err)
+{
+	float tmp = 0.0;
+	int PBGain = 0;
+	tmp = -PBGin_err/(1.0+PBGin_err);
+	if(tmp < 0)
+		{
+			PBGain =(int)(tmp*32768 + 65536);
+		}
+	else
+		{
+			PBGain = (int)(tmp*32768);
+		}
+	set_cse7790_reg_value(&(cse7790_info.PBGain),PBGain);
+}
+
+void adjust_PAOS(float PAGin_err,float PAOS_err)
+{
+	int PAOS;
+	unsigned char loop16 = 16;
+	unsigned int sum_powerA = 0;
+	while(loop16 --)
+		{
+			get_cse7790_reg_value(&(cse7790_info.PowerA));
+			sum_powerA +=cse7790_info.PowerA.data_value;
+			HAL_Delay(400);
+		}
+	sum_powerA = 0XF5AB7*16;
+	PAOS = (int)(-((sum_powerA/16)*PAOS_err)/(1+PAGin_err));
+	PAOS &= 0XFFFF;
+	set_cse7790_reg_value(&cse7790_info.PAOS,PAOS);
+}
+
+void adjust_PBOS(float PBGin_err,float PBOS_err)
+{
+	int PBOS;
+	unsigned char loop16 = 16;
+	unsigned int sum_powerB = 0;
+	while(loop16 --)
+		{
+			get_cse7790_reg_value(&(cse7790_info.PowerB));
+			sum_powerB +=cse7790_info.PowerB.data_value;
+			HAL_Delay(400);
+		}
+	sum_powerB = 0XF5AB7*16;
+	PBOS = (int)(-((sum_powerB/16)*PBOS_err)/(1+PBGin_err));
+	PBOS &= 0XFFFF;
+	set_cse7790_reg_value(&cse7790_info.PBOS,PBOS);
+}
+
+void adjust_PhaseA(float PhaseA_err,unsigned char Phase_sel)
+{
+	unsigned char PhaseA = 0;
+	unsigned char signal = 1;
+	
+	float tmp = 0.0;
+	tmp = -(PhaseA_err)/1.7320508;
+	PhaseA = (unsigned char)((DEGREES(asin(tmp)))/0.02);
+
+	if(PhaseA_err > 0.0)
+		{
+			signal = 0;
+		}
+	
+	if(Phase_sel == 0)
+		{
+			if(signal == 0)
+				{
+					PhaseA = (256 + PhaseA -96);
+				}
+			if(signal == 1)
+				{
+					PhaseA = (256 - PhaseA -96);
+				}
+		}
+	if(Phase_sel == 1)
+		{
+			if(signal == 0)
+				{
+					PhaseA = (256 + PhaseA);
+				}
+			if(signal == 1)
+				{
+					PhaseA = (256 - PhaseA);
+				}
+		}
+	
+	set_cse7790_reg_value(&cse7790_info.PhaseA,PhaseA);	
+}
+
+void adjust_PhaseB(float PhaseB_err,unsigned char Phase_sel)
+{
+	unsigned char PhaseB = 0;
+	unsigned char signal = 1;
+	
+	float tmp = 0.0;
+	tmp = -(PhaseB_err)/1.7320508;
+	PhaseB = (unsigned char)((DEGREES(asin(tmp)))/0.02);
+
+	if(PhaseB_err > 0.0)
+		{
+			signal = 0;
+		}
+	
+	if(Phase_sel == 0)
+		{
+			if(signal == 0)
+				{
+					PhaseB = (256 + PhaseB -96);
+				}
+			if(signal == 1)
+				{
+					PhaseB = (256 - PhaseB -96);
+				}
+		}
+	if(Phase_sel == 1)
+		{
+			if(signal == 0)
+				{
+					PhaseB = (256 + PhaseB);
+				}
+			if(signal == 1)
+				{
+					PhaseB = (256 - PhaseB);
+				}
+		}
+	
+	set_cse7790_reg_value(&cse7790_info.PhaseB,PhaseB);	
+}
+
+
+
+
+
+void init_cse7790(void)
+{
+	set_cse7790_reg_value(&cse7790_info.SYSCON,0X02C4);//设置SYSCON寄存器0X02C4: 使能电流B通道 电流通道16倍增益电压通道2倍增益
+}
+
+
+
+

@@ -1,6 +1,10 @@
 #ifndef __INCLUDE_H__
 #define __INCLUDE_H__
 
+
+#include <math.h>
+#include <stdlib.h>
+
 #include "stm32f1xx_hal.h"
 //#include "object.h"
 #include "freertos.h"
