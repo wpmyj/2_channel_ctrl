@@ -2,6 +2,7 @@
 #include <math.h>
 
 extern SPI_HandleTypeDef hspi1;
+S_Adjust_Info adjust_info;
 
 S_Cse7790_Info cse7790_info = {
 	.SYSCON.data_length=2,.SYSCON.address=0X00,
@@ -24,7 +25,7 @@ S_Cse7790_Info cse7790_info = {
 	.PSOS.data_length=2,.PSOS.address=0X12,
 	.SELCON.data_length=1,.SELCON.address=0X18,
 	
-	.PFCnt_p.data_length=2,.PFCnt_p.address=0X1E,	
+	.PFCnt_P.data_length=2,.PFCnt_P.address=0X1E,	
 	.PFCnt_N.data_length=2,.PFCnt_N.address=0X1F,
 	.PFCnt.data_length=2,.PFCnt.address=0X20,
 	
@@ -371,13 +372,89 @@ void adjust_PhaseB(float PhaseB_err,unsigned char Phase_sel)
 	set_cse7790_reg_value(&cse7790_info.PhaseB,PhaseB);	
 }
 
-
-
-
-
-void init_cse7790(void)
+void adjust_RmsIAOS(void)
 {
-	set_cse7790_reg_value(&cse7790_info.SYSCON,0X02C4);//设置SYSCON寄存器0X02C4: 使能电流B通道 电流通道16倍增益电压通道2倍增益
+	int sum_RmsIA = 0;
+	short set_data = 0;
+	unsigned char loop6 = 6;
+	while(loop6 --)
+		{
+			get_cse7790_reg_value(&cse7790_info.RmsIA);
+			sum_RmsIA += cse7790_info.RmsIA.data_value;
+			osDelay(400);
+		}
+	sum_RmsIA /= 6;
+	sum_RmsIA =0X268;
+	sum_RmsIA = ~sum_RmsIA +1;
+	set_data |= sum_RmsIA&0X7FFF;
+	set_data |= ((sum_RmsIA>>16)&0X8000);
+	set_cse7790_reg_value(&cse7790_info.RmsIAOS,set_data);	
+}
+
+
+void init_adjust_info(P_S_Adjust_Info info)
+{
+	////read_data(info);
+	info->SYSCON = 0X02C4;//设置SYSCON寄存器0X02C4: 使能电流B通道 电流通道16倍增益电压通道2倍增益
+}
+
+void save_adjust_info(P_S_Adjust_Info info)
+{
+	////write_data(info);
+}
+
+void save_PFCnt_data(P_S_Adjust_Info info)
+{
+	get_cse7790_reg_value(&cse7790_info.PFCnt_P);
+	
+	get_cse7790_reg_value(&cse7790_info.PFCnt_N);
+	
+	get_cse7790_reg_value(&cse7790_info.PFCnt);
+	info->PFCnt_P = cse7790_info.PFCnt_P.data_value;
+	info->PFCnt_P = cse7790_info.PFCnt_N.data_value;
+	info->PFCnt_P = cse7790_info.PFCnt.data_value;
+	////write_data(info);	
+}
+
+void init_cse7790(P_S_Adjust_Info info)
+{
+	init_adjust_info(info);
+	//set_cse7790_reg_value(&cse7790_info.SYSCON,0X02C4);//设置SYSCON寄存器0X02C4: 使能电流B通道 电流通道16倍增益电压通道2倍增益
+	set_cse7790_reg_value(&cse7790_info.SYSCON,info->SYSCON);
+	
+	set_cse7790_reg_value(&cse7790_info.EMUCON,info->EMUCON);
+	
+	set_cse7790_reg_value(&cse7790_info.HFconst,info->HFconst);
+	
+	set_cse7790_reg_value(&cse7790_info.Pstart,info->Pstart);
+	
+	set_cse7790_reg_value(&cse7790_info.PAGain,info->PAGain);
+	
+	set_cse7790_reg_value(&cse7790_info.PBGain,info->PBGain);
+	
+	set_cse7790_reg_value(&cse7790_info.PSGain,info->PSGain);
+	
+	set_cse7790_reg_value(&cse7790_info.PhaseA,info->PhaseA);
+	
+	set_cse7790_reg_value(&cse7790_info.PhaseB,info->PhaseB);
+	
+	set_cse7790_reg_value(&cse7790_info.PAOS,info->PAOS);
+	
+	set_cse7790_reg_value(&cse7790_info.RmsIAOS,info->RmsIAOS);
+	
+	set_cse7790_reg_value(&cse7790_info.RmsIBOS,info->RmsIBOS);
+	
+	set_cse7790_reg_value(&cse7790_info.IBGain,info->IBGain);
+	
+	set_cse7790_reg_value(&cse7790_info.PSOS,info->PSOS);
+	
+	set_cse7790_reg_value(&cse7790_info.SELCON,info->SELCON);
+	
+	set_cse7790_reg_value(&cse7790_info.PFCnt_P,info->PFCnt_P);
+	
+	set_cse7790_reg_value(&cse7790_info.PFCnt_N,info->PFCnt_N);
+	
+	set_cse7790_reg_value(&cse7790_info.PFCnt,info->PFCnt);
 }
 
 

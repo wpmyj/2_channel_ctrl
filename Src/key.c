@@ -8,12 +8,6 @@ void test(void)
 	static unsigned int data[20];
 	unsigned char loopx;
 	get_cse7790_info(&cse7790_info);
-	for(loopx = 0; loopx<6 ; loopx ++)
-		{
-			enable_cse7790_write();
-			write_cse7790(loopx,(unsigned int)loopx,2);
-			disable_cse7790_write();
-		}
 	HAL_Delay(100);
 	set_cse7790_HFconst(0X2345);
 	for(loopx = 0; loopx<6 ; loopx ++)
@@ -36,7 +30,7 @@ void test(void)
 	adjust_PhaseA(0.004,0);
 	adjust_PhaseA(0.004,1);
 
-	
+	adjust_RmsIAOS();
 	get_cse7790_info(&cse7790_info);
 	
 	if(data[0] == 1)

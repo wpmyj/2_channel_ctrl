@@ -29,12 +29,6 @@
 
 /////////////////////////////// funtion in main
 
-void save_tem_hum_buf(unsigned int tem,unsigned int hum);
-void average_tem_hum(void);
-void change_tem(void);
-void change_hum(void);
-unsigned compare_id(void);
-unsigned char switch_speed(void);
 
 
 //////////////////////////////

@@ -64,7 +64,7 @@ typedef struct
 	S_Cse7790_Reg PSGain;
 	S_Cse7790_Reg PSOS;
 	S_Cse7790_Reg SELCON;
-	S_Cse7790_Reg PFCnt_p;
+	S_Cse7790_Reg PFCnt_P;
 	S_Cse7790_Reg PFCnt_N;
 	S_Cse7790_Reg PFCnt;
 	S_Cse7790_Reg RmsIA;
@@ -97,11 +97,49 @@ typedef struct
 }S_Cse7790_Info,*P_S_Cse7790_Info;
 extern S_Cse7790_Info cse7790_info;
 
+typedef struct
+{
+	unsigned char PhaseA;
+	unsigned char PhaseB;
+	unsigned char SELCON;
+	
+	unsigned short HFconst;
+	unsigned short PAGain;
+	unsigned short PBGain;
+	unsigned short PSGain;
+	unsigned short PAOS;
+	unsigned short PBOS;
+	unsigned short PSOS;
+
+	unsigned short RmsIAOS;
+	unsigned short RmsIBOS;
+	
+	unsigned short IBGain;
+
+	unsigned short Pstart;
+
+	unsigned short SYSCON;
+	unsigned short EMUCON;
+
+	unsigned short PFCnt_P;
+	unsigned short PFCnt_N;
+	unsigned short PFCnt;
+	
+}S_Adjust_Info,*P_S_Adjust_Info;
+extern S_Adjust_Info adjust_info;
+
+
+
+
+
+
 #define ENABLE_CSE7790	HAL_GPIO_WritePin(SPI1_CS_GPIO_Port,SPI1_CS_Pin,GPIO_PIN_RESET)
 #define DISABLE_CSE7790	HAL_GPIO_WritePin(SPI1_CS_GPIO_Port,SPI1_CS_Pin,GPIO_PIN_SET)
 
 unsigned int set_bit(unsigned int source,unsigned int bit_value);
 unsigned int clear_bit(unsigned int source,unsigned int bit_value);
+
+void init_cse7790(P_S_Adjust_Info info);
 
 unsigned int read_cse7790(unsigned char address,unsigned char data_length);
 void write_cse7790(unsigned char address,unsigned int value,unsigned char data_length);
@@ -125,7 +163,7 @@ void adjust_PAOS(float PAGin_err,float PAOS_err);//校准A通道offset小功率校准
 void adjust_PBOS(float PBGin_err,float PBOS_err);//校准B通道offset小功率校准
 void adjust_PhaseA(float PhaseA_err,unsigned char Phase_sel);//校准A通道相位
 void adjust_PhaseB(float PhaseB_err,unsigned char Phase_sel);//校准B通道相位
-
+void adjust_RmsIAOS(void);
 
 #endif
 

@@ -39,7 +39,7 @@
 #include "gpio.h"
 
 /* USER CODE BEGIN Includes */
-
+#include "include.h"
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
@@ -85,6 +85,7 @@ int main(void)
   MX_SPI1_Init();
 
   /* USER CODE BEGIN 2 */
+  init_cse7790(&adjust_info);
 
   /* USER CODE END 2 */
 
